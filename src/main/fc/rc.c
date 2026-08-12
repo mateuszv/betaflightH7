@@ -55,6 +55,9 @@
 
 #include "sensors/battery.h"
 #include "sensors/gyro.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 
 #include "rc.h"
 
@@ -651,6 +654,13 @@ FAST_CODE void processRcCommand(void)
                 // pid controller with the value calculated from the desired heading logic.
                 angleRate = gpsRescueGetYawRate();
                 // Treat the stick input as centered to avoid any stick deflection base modifications (like acceleration limit)
+                rcDeflection[axis] = 0;
+                rcDeflectionAbs[axis] = 0;
+            } else
+#endif
+#ifdef USE_MISSION_CONTROL
+            if ((axis == FD_YAW) && missionControlActive()) {
+                angleRate = missionControlYawRateDps();
                 rcDeflection[axis] = 0;
                 rcDeflectionAbs[axis] = 0;
             } else

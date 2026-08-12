@@ -69,6 +69,9 @@
 #include "io/gimbal_control.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 #include "io/piniobox.h"
 #include "io/serial.h"
 #include "io/transponder_ir.h"
@@ -155,6 +158,9 @@ static void taskHandleSerial(timeUs_t currentTimeUs)
 
     bool evaluateMspData = ARMING_FLAG(ARMED) ? MSP_SKIP_NON_MSP_DATA : MSP_EVALUATE_NON_MSP_DATA;
     mspSerialProcess(evaluateMspData, mspFcProcessCommand, mspFcProcessReply);
+#ifdef USE_MISSION_CONTROL
+    missionControlProcess(currentTimeUs);
+#endif
 }
 
 static void taskBatteryAlerts(timeUs_t currentTimeUs)

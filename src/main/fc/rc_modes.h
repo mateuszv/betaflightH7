@@ -84,6 +84,7 @@ typedef enum {
     BOXREADY,
     BOXLAPTIMERRESET,
     BOXWPCAPTURE,
+    BOXMISSION,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 

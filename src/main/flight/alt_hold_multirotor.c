@@ -40,6 +40,9 @@
 #include "pg/autopilot.h"
 
 #include "alt_hold.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 
 static const float taskIntervalSeconds = HZ_TO_INTERVAL(ALTHOLD_TASK_RATE_HZ); // i.e. 0.01 s
 
@@ -78,6 +81,12 @@ void altHoldInit(void)
     altHoldReset();
 }
 
+void altHoldSetExternalTarget(float targetAltitudeCm)
+{
+    altHold.targetAltitudeCm = targetAltitudeCm;
+    altHold.targetVelocity = 0.0f;
+}
+
 static void altHoldProcessTransitions(void) {
 
     if (FLIGHT_MODE(ALT_HOLD_MODE)) {
@@ -97,6 +106,12 @@ static void altHoldProcessTransitions(void) {
 
 static void altHoldUpdateTargetAltitude(void)
 {
+#ifdef USE_MISSION_CONTROL
+    if (missionControlActive()) {
+        altHoldSetExternalTarget(missionControlAltitudeCm());
+        return;
+    }
+#endif
     // User can adjust the target altitude with throttle, but only when
     // - throttle is outside deadband, and
     // - throttle is not low (zero), and

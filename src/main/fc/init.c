@@ -122,6 +122,9 @@
 #include "io/gimbal.h"
 #include "io/gimbal_control.h"
 #include "io/gps.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 #include "io/ledstrip.h"
 #include "io/pidaudio.h"
 #include "io/piniobox.h"
@@ -924,6 +927,9 @@ void initPhase3(void)
     // Initialize MSP
     mspInit();
     mspSerialInit();
+#ifdef USE_MISSION_CONTROL
+    missionControlInit();
+#endif
 
 /*
  * CMS, display devices and OSD

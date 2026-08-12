@@ -86,6 +86,9 @@
 
 #include "io/beeper.h"
 #include "io/gps.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 #include "io/pidaudio.h"
 #include "io/serial.h"
 #include "io/statusindicator.h"
@@ -1041,6 +1044,9 @@ void processRxModes(timeUs_t currentTimeUs)
 
     bool canUseHorizonMode = true;
     if ((IS_RC_MODE_ACTIVE(BOXANGLE)
+#ifdef USE_MISSION_CONTROL
+        || IS_RC_MODE_ACTIVE(BOXMISSION)
+#endif
         || failsafeIsActive()
 #ifdef USE_ALTITUDE_HOLD
         || FLIGHT_MODE(ALT_HOLD_MODE)
@@ -1058,6 +1064,9 @@ void processRxModes(timeUs_t currentTimeUs)
     } else {
         DISABLE_FLIGHT_MODE(ANGLE_MODE); // failsafe support
     }
+#ifdef USE_MISSION_CONTROL
+    missionControlUpdateMode(currentTimeUs);
+#endif
 
 #if defined(USE_GPS_RESCUE) && !ENABLE_RESCUE_PLAN
     // Legacy: the pilot's switch and the failsafe procedure both fly the legacy
@@ -1169,7 +1178,11 @@ void processRxModes(timeUs_t currentTimeUs)
         && !FLIGHT_MODE(GPS_RESCUE_MODE)
         // and either the alt_hold switch is activated, or are in failsafe landing mode,
         // or an autopilot mission needs altitude control, or a switch-rescue fallback descent
-        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive())
+        && (IS_RC_MODE_ACTIVE(BOXALTHOLD) || failsafeIsActive() || FLIGHT_MODE(AUTOPILOT_MODE) || flightPlanNavIsRescueDescentActive()
+#ifdef USE_MISSION_CONTROL
+            || missionControlActive()
+#endif
+        )
         // and we have Acc for self-levelling
         && sensors(SENSOR_ACC)
         // and we have altitude data

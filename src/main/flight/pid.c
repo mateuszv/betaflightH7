@@ -51,6 +51,9 @@
 #include "flight/mixer.h"
 
 #include "io/gps.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 
 #include "pg/autopilot.h"
 #include "pg/pg.h"
@@ -575,6 +578,12 @@ STATIC_UNIT_TESTED FAST_CODE_NOINLINE float pidLevel(int axis, const pidProfile_
 #endif
 
     float angleTarget = angleLimit * currentPidSetpoint * maxSetpointRateInv;
+#ifdef USE_MISSION_CONTROL
+    if (missionControlActive()) {
+        angleTarget = missionControlAngleDeg(axis);
+        angleFeedforward = 0.0f;
+    }
+#endif
     // use acro rates for the angle target in both horizon and angle modes, converted to -1 to +1 range using maxRate
 
 #ifdef USE_WING
