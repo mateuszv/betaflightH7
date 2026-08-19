@@ -128,7 +128,19 @@
 
 static void taskMain(timeUs_t currentTimeUs)
 {
-    UNUSED(currentTimeUs);
+#ifdef USE_MISSION_CONTROL
+    static timeUs_t lastDebugUs;
+
+    if (cmpTimeUs(currentTimeUs, lastDebugUs) >= 5000000) {
+        lastDebugUs = currentTimeUs;
+
+        missionDebugPrintf(
+            "TEST uptime=%u armed=%u",
+            millis(),
+            ARMING_FLAG(ARMED)
+        );
+    }
+#endif
 
 #ifdef USE_SDCARD
     afatfs_poll();

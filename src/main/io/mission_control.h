@@ -14,7 +14,7 @@
 
 #include "common/time.h"
 
-#define MISSION_DEBUG_MESSAGE_SIZE 96
+#define MISSION_DEBUG_MESSAGE_SIZE 48
 
 typedef struct missionDebugMessage_s {
     uint32_t timestampMs;

@@ -44,7 +44,7 @@
 #define MISSION_MAX_ALTITUDE_CM          100000
 #define MISSION_YAW_P                    2.0f
 #define MISSION_MAX_YAW_RATE_DPS         180.0f
-#define MISSION_DEBUG_QUEUE_LENGTH       16
+#define MISSION_DEBUG_QUEUE_LENGTH       32
 
 typedef enum {
     MISSION_MSG_HEARTBEAT = 1,
