@@ -10,8 +10,17 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "common/time.h"
+
+#define MISSION_DEBUG_MESSAGE_SIZE 96
+
+typedef struct missionDebugMessage_s {
+    uint32_t timestampMs;
+    uint8_t length;
+    char text[MISSION_DEBUG_MESSAGE_SIZE];
+} missionDebugMessage_t;
 
 void missionControlInit(void);
 void missionControlProcess(timeUs_t currentTimeUs);
@@ -21,3 +30,8 @@ bool missionControlActive(void);
 float missionControlAngleDeg(int axis);
 float missionControlYawRateDps(void);
 float missionControlAltitudeCm(void);
+
+void missionDebugPrintf(const char *format, ...);
+bool missionDebugPop(missionDebugMessage_t *message);
+uint8_t missionDebugQueued(void);
+uint32_t missionDebugDropped(void);

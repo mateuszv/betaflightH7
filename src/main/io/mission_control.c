@@ -12,12 +12,14 @@
 #ifdef USE_MISSION_CONTROL
 
 #include <stdbool.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "common/axis.h"
 #include "common/crc.h"
 #include "common/maths.h"
+#include "common/printf.h"
 #include "drivers/serial.h"
 #include "drivers/time.h"
 #include "fc/rc_modes.h"
@@ -42,6 +44,7 @@
 #define MISSION_MAX_ALTITUDE_CM          100000
 #define MISSION_YAW_P                    2.0f
 #define MISSION_MAX_YAW_RATE_DPS         180.0f
+#define MISSION_DEBUG_QUEUE_LENGTH       16
 
 typedef enum {
     MISSION_MSG_HEARTBEAT = 1,
@@ -95,6 +98,77 @@ static bool missionSwitchWasActive;
 static bool controlActive;
 static bool wasArmed;
 static float armAltitudeCm;
+
+static missionDebugMessage_t debugQueue[MISSION_DEBUG_QUEUE_LENGTH];
+static uint8_t debugQueueHead;
+static uint8_t debugQueueTail;
+static uint8_t debugQueueCount;
+static uint32_t debugDroppedCount;
+
+typedef struct {
+    char *buffer;
+    uint8_t length;
+} missionDebugFormatContext_t;
+
+static void missionDebugPutChar(void *context, char character)
+{
+    missionDebugFormatContext_t *format = context;
+    if (format->length < MISSION_DEBUG_MESSAGE_SIZE - 1) {
+        format->buffer[format->length++] = character;
+    }
+}
+
+void missionDebugPrintf(const char *format, ...)
+{
+    if (!format) {
+        return;
+    }
+
+    if (debugQueueCount >= MISSION_DEBUG_QUEUE_LENGTH) {
+        debugDroppedCount++;
+        return;
+    }
+
+    missionDebugMessage_t *message = &debugQueue[debugQueueHead];
+    missionDebugFormatContext_t formatContext = {
+        .buffer = message->text,
+        .length = 0,
+    };
+
+    va_list arguments;
+    va_start(arguments, format);
+    tfp_format(&formatContext, missionDebugPutChar, format, arguments);
+    va_end(arguments);
+
+    message->text[formatContext.length] = '\0';
+    message->length = formatContext.length;
+    message->timestampMs = millis();
+
+    debugQueueHead = (debugQueueHead + 1) % MISSION_DEBUG_QUEUE_LENGTH;
+    debugQueueCount++;
+}
+
+bool missionDebugPop(missionDebugMessage_t *message)
+{
+    if (!message || debugQueueCount == 0) {
+        return false;
+    }
+
+    *message = debugQueue[debugQueueTail];
+    debugQueueTail = (debugQueueTail + 1) % MISSION_DEBUG_QUEUE_LENGTH;
+    debugQueueCount--;
+    return true;
+}
+
+uint8_t missionDebugQueued(void)
+{
+    return debugQueueCount;
+}
+
+uint32_t missionDebugDropped(void)
+{
+    return debugDroppedCount;
+}
 
 static uint16_t readU16(const uint8_t *data)
 {
@@ -319,6 +393,10 @@ static void sendHeartbeat(timeUs_t currentTimeUs)
 
 void missionControlInit(void)
 {
+    debugQueueHead = 0;
+    debugQueueTail = 0;
+    debugQueueCount = 0;
+    debugDroppedCount = 0;
     parserReset();
     const serialPortConfig_t *portConfig = findSerialPortConfig(FUNCTION_MISSION);
     if (portConfig) {
@@ -346,6 +424,7 @@ void missionControlProcess(timeUs_t currentTimeUs)
 
 void missionControlUpdateMode(timeUs_t currentTimeUs)
 {
+    const bool wasControlActive = controlActive;
     const bool armed = ARMING_FLAG(ARMED);
     if (armed && !wasArmed) {
         armAltitudeCm = getAltitudeCmControl();
@@ -358,6 +437,9 @@ void missionControlUpdateMode(timeUs_t currentTimeUs)
         setpointSeenSinceEnable = false;
         headingSeenSinceEnable = false;
         controlActive = false;
+        missionDebugPrintf("MISSION switch on");
+    } else if (!missionSwitchActive && missionSwitchWasActive) {
+        missionDebugPrintf("MISSION switch off");
     }
 
     if (!missionSwitchActive) {
@@ -374,6 +456,10 @@ void missionControlUpdateMode(timeUs_t currentTimeUs)
         if (!controlActive) {
             missionComputerFailsafe();
         }
+    }
+
+    if (controlActive != wasControlActive) {
+        missionDebugPrintf("MISSION control=%u", controlActive);
     }
 
     missionSwitchWasActive = missionSwitchActive;

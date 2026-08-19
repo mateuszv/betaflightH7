@@ -98,6 +98,9 @@
 #include "io/gimbal.h"
 #include "io/gps.h"
 #include "io/ledstrip.h"
+#ifdef USE_MISSION_CONTROL
+#include "io/mission_control.h"
+#endif
 #include "io/serial.h"
 #include "io/serial_4way.h"
 #include "io/transponder_ir.h"
@@ -796,6 +799,25 @@ RAM_CODE static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, msp
             sbufWriteU16(dst, debug[i]);      // 4 variables are here for general monitoring purpose
         }
         break;
+
+#ifdef USE_MISSION_CONTROL
+    case MSP2_MISSION_DEBUG: {
+        missionDebugMessage_t message;
+        const bool messagePresent = missionDebugPop(&message);
+
+        sbufWriteU8(dst, 1); // Payload format version
+        sbufWriteU8(dst, messagePresent ? 1 : 0);
+        sbufWriteU8(dst, missionDebugQueued());
+        sbufWriteU32(dst, missionDebugDropped());
+
+        if (messagePresent) {
+            sbufWriteU32(dst, message.timestampMs);
+            sbufWriteU8(dst, message.length);
+            sbufWriteData(dst, message.text, message.length);
+        }
+        break;
+    }
+#endif
 
     case MSP_UID:
         sbufWriteU32(dst, U_ID_0);
