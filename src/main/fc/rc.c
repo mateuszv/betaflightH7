@@ -625,7 +625,7 @@ FAST_CODE void processRcCommand(void)
         updateSmoothing = shouldUpdateSmoothing();
 
         if (updateSmoothing) {
-#ifdef USE_FEEDFORWARD
+#if defined(USE_FEEDFORWARD) && defined(USE_RC_SMOOTHING_FILTER)
             // update FF smoothing
             updateFeedforwardFilters(&pidRuntime);
 #endif
@@ -904,8 +904,10 @@ void initRcProcessing(void)
     rcSmoothingData.throttleCutoffFrequency = rcSmoothingData.throttleCutoffSetting;
 #endif
 
-#ifdef USE_FEEDFORWARD
+#if defined(USE_FEEDFORWARD) && defined(USE_RC_SMOOTHING_FILTER)
     updateFeedforwardFilters(&pidRuntime);
+#endif
+#ifdef USE_FEEDFORWARD
     feedforwardAveraging = pidRuntime.feedforwardAveraging;
     pt1FilterInit(&feedforwardYawHoldLpf, 0.0f);
 #endif // USE_FEEDFORWARD
