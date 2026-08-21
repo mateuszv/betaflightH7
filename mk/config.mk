@@ -2,13 +2,16 @@
 CONFIGS_REPO_URL ?= https://github.com/betaflight/config
 # handle only this directory as config submodule
 CONFIGS_SUBMODULE_DIR := src/config
+LOCAL_CONFIG_DIR := $(ROOT_DIR)/src/config-local
 # Configs live either flat (configs/<BOARD>/config.h) or grouped by manufacturer
 # (configs/<MANUFACTURER_ID>/<BOARD>/config.h). Both are accepted; the leaf
 # directory name is always the board name. The two globs never overlap because a
 # manufacturer directory holds board directories, not a config.h of its own.
 BASE_CONFIGS           = $(sort $(notdir $(patsubst %/,%,$(dir \
                              $(wildcard $(CONFIG_DIR)/configs/*/config.h) \
-                             $(wildcard $(CONFIG_DIR)/configs/*/*/config.h)))))
+                             $(wildcard $(CONFIG_DIR)/configs/*/*/config.h) \
+                             $(wildcard $(LOCAL_CONFIG_DIR)/configs/*/config.h) \
+                             $(wildcard $(LOCAL_CONFIG_DIR)/configs/*/*/config.h)))))
 
 ifneq ($(words $(CONFIG_DIR)),1)
 $(error CONFIG_DIR/BETAFLIGHT_CONFIG path contains whitespace; unsupported by GNU make wildcard.)
@@ -29,18 +32,16 @@ endif
 # manufacturer-grouped (configs/<MANUFACTURER_ID>/<BOARD>) layout. A flat match
 # wins; otherwise search one manufacturer level down and reject only a grouped
 # name that resolves to more than one manufacturer.
-CONFIG_FLAT_MATCH  := $(wildcard $(CONFIG_DIR)/configs/$(CONFIG)/config.h)
-ifneq ($(CONFIG_FLAT_MATCH),)
-CONFIG_PATH        := $(patsubst %/,%,$(dir $(CONFIG_FLAT_MATCH)))
-else
-CONFIG_MATCHES     := $(wildcard $(CONFIG_DIR)/configs/*/$(CONFIG)/config.h)
+CONFIG_MATCHES     := $(wildcard $(LOCAL_CONFIG_DIR)/configs/$(CONFIG)/config.h) \
+                      $(wildcard $(LOCAL_CONFIG_DIR)/configs/*/$(CONFIG)/config.h) \
+                      $(wildcard $(CONFIG_DIR)/configs/$(CONFIG)/config.h) \
+                      $(wildcard $(CONFIG_DIR)/configs/*/$(CONFIG)/config.h)
 ifneq ($(word 2,$(CONFIG_MATCHES)),)
 $(error Ambiguous CONFIG '$(CONFIG)' matches multiple configs: $(CONFIG_MATCHES))
 endif
 CONFIG_PATH        := $(patsubst %/,%,$(dir $(firstword $(CONFIG_MATCHES))))
-endif
 ifeq ($(CONFIG_PATH),)
-$(error CONFIG '$(CONFIG)' not found under $(CONFIG_DIR)/configs (flat or <manufacturer>/<board>).)
+$(error CONFIG '$(CONFIG)' not found under $(LOCAL_CONFIG_DIR)/configs or $(CONFIG_DIR)/configs.)
 endif
 
 CONFIG_HEADER_FILE  = $(CONFIG_PATH)/config.h
@@ -133,4 +134,3 @@ ifeq ($(wildcard $(CONFIG_DIR)/configs/),)
 		exit 1; \
 	fi
 endif
-
