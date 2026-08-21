@@ -81,7 +81,7 @@
 // -Wpadded can be turned on to check padding of structs
 //#pragma GCC diagnostic warning "-Wpadded"
 
-#if !defined(CLOUD_BUILD) && !defined(SITL)
+#if !defined(CLOUD_BUILD) && !defined(SITL) && !defined(MISSION_COMPUTER_BUILD)
 #define USE_DSHOT
 #endif
 
@@ -91,7 +91,9 @@
 #define USE_DSHOT_TELEMETRY_STATS
 #endif
 
+#if !defined(MISSION_COMPUTER_BUILD)
 #define USE_MOTOR
+#endif
 #define USE_DMA
 #define USE_TIMER
 
@@ -343,7 +345,9 @@
 #define USE_VTX_TABLE
 #endif // USE_VTX
 
+#if !defined(MISSION_COMPUTER_BUILD)
 #define USE_HUFFMAN
+#endif
 
 #define PID_PROFILE_COUNT 4
 #ifndef CONTROL_RATE_PROFILE_COUNT
@@ -354,23 +358,30 @@
 #define USE_CLI_BATCH
 #define USE_RESOURCE_MGMT
 
-#define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
-
 #define USE_GYRO_OVERFLOW_CHECK
+
+#if !defined(MISSION_COMPUTER_BUILD)
+#define USE_RUNAWAY_TAKEOFF     // Runaway Takeoff Prevention (anti-taz)
 #define USE_YAW_SPIN_RECOVERY
+#endif
 
 #ifdef USE_DSHOT
 #define USE_DSHOT_DMAR
 #endif
 
+#if !defined(MISSION_COMPUTER_BUILD)
 #define USE_MSP_OVER_TELEMETRY
-
-#define USE_VIRTUAL_CURRENT_METER
 #define USE_ESC_SENSOR
 #define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
 #define USE_RCDEVICE
+#endif
+
+#if !defined(MISSION_COMPUTER_BUILD)
+#define USE_VIRTUAL_CURRENT_METER
+#endif
 
 #define USE_GYRO_LPF2
+#if !defined(MISSION_COMPUTER_BUILD)
 #define USE_DYN_LPF
 #define USE_D_MAX
 
@@ -380,6 +391,7 @@
 #define USE_ITERM_RELAX
 #define USE_RC_SMOOTHING_FILTER
 #define USE_THRUST_LINEARIZATION
+#endif
 
 #ifdef USE_SERIALRX_SPEKTRUM
 #define USE_SPEKTRUM_BIND
@@ -403,31 +415,37 @@
 
 #define USE_BOARD_INFO
 #define USE_RTC_TIME
-#define USE_ESC_SENSOR_INFO
 
+#if !defined(MISSION_COMPUTER_BUILD)
+#define USE_ESC_SENSOR_INFO
 #define USE_RX_MSP
 #define USE_RX_RSSI_DBM
 #define USE_RX_RSNR
 #define USE_RX_LINK_QUALITY_INFO
 #define USE_RX_MSP_OVERRIDE
 #define USE_RX_LINK_UPLINK_POWER
+#endif
 
-#define USE_GYRO_DLPF_EXPERIMENTAL
 #define USE_SENSOR_NAMES
-#define USE_UNCOMMON_MIXERS
 #define USE_SIGNATURE
+#if !defined(MISSION_COMPUTER_BUILD)
+#define USE_GYRO_DLPF_EXPERIMENTAL
+#define USE_UNCOMMON_MIXERS
 #define USE_HOTT_TEXTMODE
 #define USE_ESC_SENSOR_TELEMETRY
 #define USE_TELEMETRY_SENSORS_DISABLED_DETAILS
 #define USE_PERSISTENT_STATS
 #define USE_PROFILE_NAMES
-#define USE_FEEDFORWARD
 #define USE_CUSTOM_BOX_NAMES
 #define USE_BATTERY_VOLTAGE_SAG_COMPENSATION
 #define USE_SIMPLIFIED_TUNING
 #define USE_CRAFTNAME_MSGS
+#endif
 
-#if !defined(CORE_BUILD)
+/* The legacy PID core is still linked by Betaflight's base scheduler. */
+#define USE_FEEDFORWARD
+
+#if !defined(CORE_BUILD) && !defined(MISSION_COMPUTER_BUILD)
 // CORE_BUILD is only hardware drivers, and the bare minimum
 // any thing defined here will be in the standard (git hub actions)
 // builds or included in CLOUD_BUILD by default.
