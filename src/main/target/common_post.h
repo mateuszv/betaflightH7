@@ -831,7 +831,7 @@ extern struct linker_symbol __fontdata_end;
 #if !defined(USE_GPS_UBLOX)
 #define USE_GPS_UBLOX
 #endif
-#if !defined(USE_GPS_RESCUE) && defined(USE_ACC)
+#if !defined(USE_GPS_RESCUE) && defined(USE_ACC) && !defined(MISSION_COMPUTER_BUILD)
 #define USE_GPS_RESCUE
 #endif
 #endif // USE_GPS
